@@ -30,36 +30,31 @@ public class TestPlugin : MonoBehaviour
     AndroidJavaClass _pluginClass;
     AndroidJavaObject _pluginInstance;
 
-    public TextMeshProUGUI label;
+    [SerializeField] private TextMeshProUGUI label;
 
     private void Start()
     {
         if (Application.platform == RuntimePlatform.Android)
         {
             _pluginClass = new AndroidJavaClass(className);
-            
+
             AndroidJavaClass playerClass = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
             AndroidJavaObject activity = playerClass.GetStatic<AndroidJavaObject>("currentActivity");
             _pluginClass.SetStatic<AndroidJavaObject>("mainActivity", activity);
-            
+
             _pluginInstance = _pluginClass.CallStatic<AndroidJavaObject>("getInstance");
-            
-            // _pluginInstance.Call("logFromUnity", "Este es un log desde Unity");
-            // ArrayList logs = _pluginInstance.Call<ArrayList>("getUnityLogs");
-            // _pluginInstance.Call("showAlertBeforeClearingLogs");
-
-
         }
     }
 
     public void RunPlugin()
     {
-        Debug.Log("RunPlugin()");
-
         if (Application.platform == RuntimePlatform.Android)
         {
-            label.text = _pluginInstance.Call<string>("getLogtag");
-            _pluginInstance.Call("logFromUnity", "Este es un log desde C#");
+            string text = "UnityLog";
+
+            _pluginInstance.Call("logFromUnity", text);
+
+            Debug.Log(text);
         }
     }
 
@@ -74,7 +69,7 @@ public class TestPlugin : MonoBehaviour
         if (Application.platform == RuntimePlatform.Android)
         {
             _pluginInstance.Call("showAlertView", new object[] { strings, new AlertViewCallBack(handler) });
-            
+
         }
         else
             Debug.Log("AlertView not supported on this platform");
@@ -85,9 +80,24 @@ public class TestPlugin : MonoBehaviour
         Debug.Log("ShowAlert()");
         if (Application.platform == RuntimePlatform.Android)
         {
-            label.text = "POP UP PLEASE";
-            showAlertDialog(new string[] { "Alert Title", "Alert Message","Cancel" , "OK" }, (int obj) => { Debug.Log("Local Handler called: " + obj); });
-            //_pluginInstance.Call("showAlertBeforeClearingLogs");
+            showAlertDialog(new string[] { "Delete File", "Are you sure you want to delete the file?", "Cancel", "OK" },
+                (int obj) => { Debug.Log("Local Handler called: " + obj); });
         }
+    }
+
+    public void ReadLogs()
+    {
+        label.text = "Read";
+        if (Application.platform == RuntimePlatform.Android)
+        {
+            label.text = _pluginInstance.Call<string>("ReadFile");
+            _pluginInstance.Call("debugLog", label.text);
+        }
+        Debug.Log("ReadFile");
+    }
+
+    public void Quit()
+    {
+        Application.Quit();
     }
 }

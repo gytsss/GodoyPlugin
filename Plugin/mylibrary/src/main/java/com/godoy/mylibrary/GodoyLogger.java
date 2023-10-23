@@ -6,12 +6,16 @@ import android.content.DialogInterface;
 import android.util.Log;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 
 public class GodoyLogger {
 
+    private File logFile;
     static final String LOGTAG = "GodLOG";
     public static Activity mainActivity;
 
@@ -52,37 +56,27 @@ public class GodoyLogger {
                 .setCancelable(false)
                 .create();
         alertDialog.setButton(alertDialog.BUTTON_NEUTRAL, strings[2], myClickListener);
-        if (strings.length > 3)
+        if (strings.length > 3) {
             alertDialog.setButton(alertDialog.BUTTON_NEGATIVE, strings[3], myClickListener);
-        if (strings.length > 4)
+            clearUnityLogs();
+            Log.v(LOGTAG, "Press yes");
+        }
+        if (strings.length > 4) {
             alertDialog.setButton(alertDialog.BUTTON_POSITIVE, strings[4], myClickListener);
+            Log.v(LOGTAG, "Press cancel");
+        }
         alertDialog.show();
 
     }
-    public void showAlertBeforeClearingLogs()
-    {
-        String[] strings = {"Confirmation", "Are you sure that you want to delete logs?", "Yes", "No"};
-
-        showAlertView(strings, new AlertViewCallBack() {
-            @Override
-            public void onButtonTapped(int id) {
-                if(id == DialogInterface.BUTTON_NEUTRAL)
-                {
-                    clearUnityLogs();
-                }
-            }
-        });
-    }
-
-    private ArrayList<String> unityLogs = new ArrayList<>();
-    private File logFile;
 
     public GodoyLogger() {
         logFile = new File(mainActivity.getFilesDir(), "unity_logs.txt");
 
+
         if (!logFile.exists()) {
             try {
                 logFile.createNewFile();
+                Log.v(LOGTAG, "File created");
             } catch (IOException e) {
                 Log.e(LOGTAG, "Error creating logs file", e);
             }
@@ -90,31 +84,53 @@ public class GodoyLogger {
     }
 
     public void logFromUnity(String log) {
-        unityLogs.add(log);
 
         try {
-            FileOutputStream fos = new FileOutputStream(logFile, true);
-            fos.write((log + "\n").getBytes());
-            fos.close();
+            logFile = new File(mainActivity.getFilesDir(), "unity_logs.txt");
+            FileWriter fileWriter = new FileWriter(logFile, true);
+            fileWriter.append(log + " ");
+            Log.d(LOGTAG, "Writing: " + log);
+            fileWriter.close();
+            Log.d(LOGTAG, "Close file after writing");
         } catch (IOException e) {
             Log.e(LOGTAG, "Error writing logs file", e);
         }
     }
 
-    public ArrayList<String> getUnityLogs()
+    public String ReadFile()
     {
-        return unityLogs;
+        byte[] content = new byte[(int)logFile.length()];
+        if(logFile.exists())
+        {
+            try
+            {
+                FileInputStream fis = new FileInputStream(logFile);
+                fis.read(content);
+                Log.v(LOGTAG, "Correctly read");
+                return new String(content);
+            }
+            catch (IOException e)
+            {
+                Log.e(LOGTAG, "Error reading logs file", e);
+                return "Error reading logs file";
+            }
+        }
+        else {
+            Log.e(LOGTAG, "Error 404 file");
+            return "File 404";
+        }
     }
 
     public void clearUnityLogs()
     {
-        unityLogs.clear();
         if(logFile.exists())
         {
             logFile.delete();
+            Log.v(LOGTAG, "File deleted");
             try
             {
                 logFile.createNewFile();
+                Log.v(LOGTAG, "File created again");
             }
             catch (IOException e)
             {
@@ -123,6 +139,9 @@ public class GodoyLogger {
         }
     }
 
-
+    public void debugLog(String log)
+    {
+        Log.v(LOGTAG, log);
+    }
 
 }
